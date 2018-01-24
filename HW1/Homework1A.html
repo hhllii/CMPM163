@@ -96,7 +96,7 @@
         
         	color1 += spec1 * light1_specular;
         	if (spec1 > 1.0) {
-          		outColor1 = vec4(light1_specular,2.0);
+          		outColor1 = vec4(light1_specular,1.0);
         	} else {
           		outColor1 = clamp(vec4(color1,1.0), 0.0,1.0);
         	}
@@ -190,9 +190,10 @@
 
 		// instantiate a loader
 		var loader = new THREE.JSONLoader();
-		loader.load('cup.json', function(geometry, materials){
+		loader.load('res/cup.json', function(geometry, materials){
 
 			var mesh = new THREE.Mesh(geometry, material);
+			mesh.material.side = THREE.DoubleSide;
 			mesh.position.y = 2.5;
 			scene.add(mesh);
 		});
