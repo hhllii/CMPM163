@@ -1,37 +1,38 @@
-
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>demo - Phong shader</title>
-		<meta charset="utf-8">
-		<style>
-			body {
-			  	margin: 0px;
-				overflow: hidden;
-			}
-		</style>
-	</head>
+
+<head>
+	<title>demo - Phong shader</title>
+	<meta charset="utf-8">
+	<style>
+		body {
+			margin: 0px;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
 <body>
 
-<div id="container"></div>
+	<div id="container"></div>
 
 	<script src="js/three.js"></script>
 	<script src="js/controls/OrbitControls.js"></script>
 	<script src="js/loader/JSONLoader.js"></script>
-    <script id="vertexShader" type="x-shader/x-vertex">
+	<script id="vertexShader" type="x-shader/x-vertex">
 
 	//Three.js gives us these automatically when a perspective camera is bound to the renderer
 	uniform mat4 modelMatrix;
 	uniform mat4 viewMatrix;
-      	uniform mat4 projectionMatrix;
+    uniform mat4 projectionMatrix;
 
 	//Three.js geometry creates these for us (and also texture coords, which we aren't using here)
-     	attribute vec3 position;
+    attribute vec3 position;
 	attribute vec3 normal;
 
 	//We are explicitly passing these in
-      	uniform vec3 light1_pos;
-      	uniform vec3 light2_pos;
+    uniform vec3 light1_pos;
+    uniform vec3 light2_pos;
 
 	varying vec3 N, L1, L2, V;
 
@@ -65,7 +66,7 @@
 
 		</script>
 
-		<script id="fragmentShader" type="x-shader/x-fragment">
+	<script id="fragmentShader" type="x-shader/x-fragment">
 
 	precision mediump float;
 	
@@ -125,146 +126,228 @@
 
 	</script>
 
+	<script id="vertexShader1" type="x-shader/x-vertex">
+		precision mediump float;
+		precision mediump int;
+		uniform mat4 modelViewMatrix; // optional
+		uniform mat4 projectionMatrix; // optional
+		attribute vec3 position;
+		uniform vec4 color;
+		varying vec3 vPosition;
+		varying vec4 vColor;
+		void main()	{
+			vPosition = position;
+			vColor = color;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		}
+	</script>
+
+	<script id="fragmentShader1" type="x-shader/x-fragment">
+		precision mediump float;
+		precision mediump int;
+		uniform float time;
+		varying vec3 vPosition;
+		varying vec4 vColor;
+		void main()	{
+			vec4 color = vec4( vColor );
+			color.r += sin( vPosition.x * 15.0 + time ) * 1.5;
+			color.b += cos( vPosition.x * 20.0 + time  ) * 1.0;
+			color.g += tan( vPosition.x * 30.0 + time  ) * 1.0;
+			gl_FragColor = color;
+		}
+	</script>
+
 
 	<script>
-				
-  	var container;
 
-	var camera, scene, renderer;
+		var container;
 
-      	var vs = document.getElementById( 'vertexShader' ).textContent;
-      	var fs = document.getElementById( 'fragmentShader' ).textContent;
+		var camera, scene, renderer;
 
-	var mesh1, mesh2, mesh3;
-	var material;
-	// lights
-	var ambient = new THREE.Vector3(0.1,0.1,0.1);
+		var vs = document.getElementById('vertexShader').textContent;
+		var fs = document.getElementById('fragmentShader').textContent;
 
-	var light1_pos = new THREE.Vector3(0.0,10.0,0.0); //from above
-	var light1_diffuse = new THREE.Vector3(1.0,0.0,0.0);
-	var light1_specular = new THREE.Vector3(1.0,1.0,1.0);
+		var mesh1, mesh2, mesh3;
+		var light1_cube, light2_cubess;
+		var light1_flag = false, light2_flag = false;
+		var cup;
+		var material;
 
-	var light2_pos = new THREE.Vector3(-10.0,0.0,0.0); //from the left
-	var light2_diffuse = new THREE.Vector3(0.0,0.0,1.0);
-	var light2_specular = new THREE.Vector3(1.0,1.0,1.0);
+		var ambient;
+		var light1_pos, light1_diffuse, light1_specular;
+		var light2_pos, light2_diffuse, light2_specular;
 
-	init();
-	animate();
+		init();
+		animate();
 
-	function init() {
+		function init() {
 
-		container = document.getElementById( 'container' );
+			container = document.getElementById('container');
 
-		camera = new THREE.PerspectiveCamera( 60.0, window.innerWidth / window.innerHeight, 0.1, 50 );
-		camera.position.z = 5;
+			camera = new THREE.PerspectiveCamera(60.0, window.innerWidth / window.innerHeight, 0.1, 50);
+			camera.position.z = 5;
 
-		scene = new THREE.Scene();
+			scene = new THREE.Scene();
 
+			// lights
+			ambient = new THREE.Vector3(0.1, 0.1, 0.1);
 
+			light1_pos = new THREE.Vector3(0.0, 5.0, 0.0); //from above
+			light1_diffuse = new THREE.Vector3(1.0, 1.0, 1.0);
+			light1_specular = new THREE.Vector3(1.0, 1.0, 1.0);
 
+			light2_pos = new THREE.Vector3(-5.0, 0.0, 0.0); //from the left
+			light2_diffuse = new THREE.Vector3(1.0, 106.0 / 255.0, 106.0 / 255.0);
+			light2_specular = new THREE.Vector3(1.0, 1.0, 1.0);
 
-
-		// geometry
-			var geometry1 = new THREE.SphereGeometry( 1, 64, 64 );
-        	var geometry2 = new THREE.BoxGeometry( 1, 1, 1 );
-        	var geometry3 = new THREE.TorusKnotGeometry( 1, 0.1, 100, 16 );
-			var geometry4 = new THREE.OctahedronGeometry(1, 0);
-
-		// materials (ie, linking to the shader program)
-
-          	var uniforms =  {
-            		ambient: { type: "v3", value: ambient },
-            		light1_pos: { type: "v3", value: light1_pos },
-            		light1_diffuse: { type: "v3", value: light1_diffuse },
-            		light1_specular:  { type: "v3", value: light1_specular },
-            		light2_pos: { type: "v3", value: light2_pos },
-            		light2_diffuse: { type: "v3", value: light2_diffuse },
-            		light2_specular:  { type: "v3", value: light2_specular },
-		};
-
-     		material = new THREE.RawShaderMaterial( {
-            		uniforms: uniforms,
-            		vertexShader: vs,
-            		fragmentShader: fs,	
-		} );
-
-		// instantiate a loader
-		var loader = new THREE.JSONLoader();
-		loader.load('res/cup.json', function(geometry, materials){
-
-			var mesh = new THREE.Mesh(geometry, material);
-			mesh.material.side = THREE.DoubleSide;
-			mesh.position.y = 2.5;
-			scene.add(mesh);
-		});
+			// geometry
+			var geometry1 = new THREE.IcosahedronGeometry(1, 0);
+			var geometry2 = new THREE.TorusGeometry(0.5, 0.1, 10, 100);
 
 
-		mesh1 = new THREE.Mesh( geometry1, material );
-		mesh1.translateX(-2.5);
-        scene.add( mesh1 );
+			//light1 cube
+			var light1_geometry = new THREE.SphereGeometry(0.5, 32, 32);
+			var cube1_material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+			light1_cube = new THREE.Mesh(light1_geometry, cube1_material);
+			light1_cube.position.set(light1_pos.x, light1_pos.y, light1_pos.z);
+			scene.add(light1_cube);
+			//light2 cube
+			var light2_geometry = new THREE.SphereGeometry(0.5, 32, 32);
+			var cube2_material = new THREE.MeshBasicMaterial({ color: 0xFF6A6A });
+			light2_cube = new THREE.Mesh(light2_geometry, cube2_material);
+			light2_cube.position.set(light2_pos.x, light2_pos.y, light2_pos.z);
+			scene.add(light2_cube);
 
-        
-	    mesh2 = new THREE.Mesh( geometry2, material );
-		mesh2.translateX(0.0);
-        scene.add( mesh2 );
+			//materials (ie, linking to the shader program)
 
-        mesh3 = new THREE.Mesh( geometry3, material );
-		mesh3.translateX(2.5);
-        scene.add( mesh3 );
+			var uniforms = {
+				ambient: { type: "v3", value: ambient },
+				light1_pos: { type: "v3", value: light1_pos },
+				light1_diffuse: { type: "v3", value: light1_diffuse },
+				light1_specular: { type: "v3", value: light1_specular },
+				light2_pos: { type: "v3", value: light2_pos },
+				light2_diffuse: { type: "v3", value: light2_diffuse },
+				light2_specular: { type: "v3", value: light2_specular },
+			};
 
-		mesh4 = new THREE.Mesh( geometry4, material );
-		mesh4.translateY(-2.5);
-        scene.add( mesh4 );
-  
-		renderer = new THREE.WebGLRenderer();
-		renderer.setClearColor( 0x999999 );
-		renderer.setSize( window.innerWidth, window.innerHeight );
-		container.appendChild( renderer.domElement );
-
-		//controls
-		controls = new THREE.OrbitControls( camera, renderer.domElement );
-
-		//make it so that resizing the browser window also resizes the scene
-        window.addEventListener( 'resize', onWindowResize, false );
-	}
-
-			
-
-	function animate() {
-
-		requestAnimationFrame( animate );
-		render();
-
-	}
-
-	function render() {
-
-		var time = performance.now();
-		
-		mesh2.rotation.x = time * 0.00005;
-		mesh2.rotation.y = time * 0.0005;
-
-		mesh3.rotation.x = time * 0.0009;
-
-		//if I want to update the lights, I acutally have to update the material used by each object in the scene. 
-		//material.uniforms.light1_diffuse.value = new THREE.Vector3(0.0,1.0,0.0);
-
-		renderer.render( scene, camera );
-	}
+			material = new THREE.RawShaderMaterial({
+				uniforms: uniforms,
+				vertexShader: vs,
+				fragmentShader: fs,
+			});
 
 
-	function onWindowResize( event ) {
+			var material1 = new THREE.RawShaderMaterial({
+				uniforms: {
+					time: { type: "f", value: 1 },
+            					color: { type: "v4", value: new THREE.Vector4(1.0,0.0,0.0,1.0) }
+				},
+				vertexShader: document.getElementById('vertexShader1').textContent,
+				fragmentShader: document.getElementById('fragmentShader1').textContent,
+				side: THREE.DoubleSide,
+				transparent: true
+			});
 
-		camera.aspect = window.innerWidth / window.innerHeight;
-		camera.updateProjectionMatrix();
+			// instantiate a loader
+			var loader = new THREE.JSONLoader();
+			loader.load('res/cup.json', function (geometry, materials) {
 
-		renderer.setSize( window.innerWidth, window.innerHeight );
+				var mesh = new THREE.Mesh(geometry, material1);
+				mesh.material.side = THREE.DoubleSide;
+				cup = mesh;
+				scene.add(cup);
+			});
 
-	}
+
+			mesh1 = new THREE.Mesh(geometry1, material);
+			mesh1.translateX(-3);
+			scene.add(mesh1);
 
 
-		</script>
+			mesh2 = new THREE.Mesh(geometry2, material);
+			mesh2.translateX(3);
+			scene.add(mesh2);
 
-	</body>
+			renderer = new THREE.WebGLRenderer();
+			renderer.setClearColor(0x999999);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
+
+			//controls
+			controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+			//make it so that resizing the browser window also resizes the scene
+			window.addEventListener('resize', onWindowResize, false);
+		}
+
+
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+
+			var time = performance.now();
+			//light1 movement
+			if (light1_pos.x > 10) {
+				light1_flag = false;
+			}
+			if (light1_pos.x < -10) {
+				light1_flag = true;
+			}
+			if (light1_flag) {
+				light1_pos.x = light1_pos.x + 0.1;
+			} else {
+				light1_pos.x = light1_pos.x - 0.1;
+			}
+			light1_cube.position.set(light1_pos.x, light1_pos.y, light1_pos.z);
+			//light2 movement
+			if (light2_pos.y > 10) {
+				light2_flag = false;
+			}
+			if (light2_pos.y < -10) {
+				light2_flag = true;
+			}
+			if (light2_flag) {
+				light2_pos.y = light2_pos.y + 0.1;
+			} else {
+				light2_pos.y = light2_pos.y - 0.1;
+			}
+			light2_cube.position.set(light2_pos.x, light2_pos.y, light2_pos.z);
+
+
+			//mesh1.rotation.x = time * 0.0003;
+
+			mesh2.rotation.x = time * 0.0005;
+			mesh2.rotation.y = time * 0.001;
+
+			//cup.rotation.x = time *0.0007;
+			cup.rotation.y = time * 0.0001;
+			cup.material.uniforms.time.value = time * 0.0006;
+
+			//if I want to update the lights, I acutally have to update the material used by each object in the scene. 
+			//material.uniforms.light1_diffuse.value = new THREE.Vector3(0.0,1.0,0.0);
+
+			renderer.render(scene, camera);
+		}
+
+
+		function onWindowResize(event) {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+		}
+
+
+	</script>
+
+</body>
+
 </html>
-
