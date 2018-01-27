@@ -80,12 +80,12 @@
 				if (cnt == 2 || cnt == 3) {
 					//Any live cell with two or three live neighbours lives on to the next generation.
 				
-					gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+					gl_FragColor = vec4(1.0,0.8,0.0,1.0);
 				} else {
 					//Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
 					//Any live cell with more than three live neighbours dies, as if by overpopulation.
 
-					gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+					gl_FragColor = vec4(0.0,0.6,0.3,1.0);
 				}
 			} else { //cell is dead
 				if (cnt == 3) {
@@ -93,7 +93,7 @@
 
 					gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 				} else {
-					gl_FragColor = vec4(0.0,0.0,0.0,1.0);
+					gl_FragColor = vec4(0.0,0.6,0.3,1.0);
 
 				}
 			}
@@ -221,19 +221,22 @@ function createDataTexture() {
 	for ( var i = 0; i < size; i++ ) {
 
 		var stride = i * 4;
-
-		if (Math.random() < 0.5) {
-			data[ stride ] = 255;
-			data[ stride + 1 ] = 255;
-			data[ stride + 2 ] = 255;
-			data[ stride + 3 ] = 255;
-		}
-		else {
-			data[ stride ] = 0;
-			data[ stride + 1 ] = 0;
-			data[ stride + 2 ] = 0;
-			data[ stride + 3 ] = 255;
-		}
+		data[ stride ] = Math.random() * 255;
+		data[ stride + 1 ] = Math.random() * 255;
+		data[ stride + 2 ] = Math.random() * 255;
+		data[ stride + 3 ] = 255;
+		// if (Math.random() < 0.5) {
+		// 	data[ stride ] = 255;
+		// 	data[ stride + 1 ] = 255;
+		// 	data[ stride + 2 ] = 255;
+		// 	data[ stride + 3 ] = 255;
+		// }
+		// else {
+		// 	data[ stride ] = 0;
+		// 	data[ stride + 1 ] = 0;
+		// 	data[ stride + 2 ] = 0;
+		// 	data[ stride + 3 ] = 255;
+		// }
 	}
 
 
