@@ -163,12 +163,17 @@
 	<script id="vertexShader2" type="x-shader/x-vertex">
         varying vec2 vUv;
         varying vec3 vNormal;
+		varying vec3 vViewPosition;
   
         void main(){
                 vUv = uv;
                 vNormal = normal;
+				
                 vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				vNormal = normalize( normalMatrix * normal );
+
                 gl_Position = projectionMatrix * mvPosition;
+				vViewPosition = -mvPosition.xyz;
   
             }
     </script>
@@ -196,6 +201,7 @@
   
         void main(void){
 			vec4 lDirection = viewMatrix * vec4( light3_pos, 0.0 );
+
 			vec3 lVector = normalize( lDirection.xyz );
   
             vec3 normal = normalize(vNormal);
@@ -211,45 +217,9 @@
             vec4 diffuseColor = a_color * vec4(u_lightColor, 1.0) * nDotL;
   
 			//gl_FragColor = a_color * (AmbientColor + diffuseColor);
-			gl_FragColor = vec4(light3_diffuse,1.0)*a_color* diffuse*10.0;
+			gl_FragColor = vec4(u_lightColor,1.0)*a_color* diffuse*10.0;
         }
 	</script>
-	
-	<script id="texVS" type="x-shader/x-vertex">
-
-		//Three.js gives us these automatically when a perspective camera is bound to the renderer
-		uniform mat4 modelMatrix;
-		uniform mat4 viewMatrix;
-			  uniform mat4 projectionMatrix;
-	
-			 attribute vec3 position;
-		attribute vec2 uv;
-	
-		varying vec2 vUV;
-	
-		void main() {
-				vec4 position = viewMatrix * modelMatrix * vec4(position, 1.0);
-			   vUV = uv;
-				gl_Position = projectionMatrix * position; 
-			  }
-	
-		</script>
-	
-		<script id="texFS" type="x-shader/x-fragment">
-	
-		precision mediump float;
-	
-		uniform sampler2D tex;
-		varying vec2 vUV;
-	
-			  void main() {
-	
-			vec4 c = texture2D(tex, vUV);
-				//gl_FragColor = vec4(vUV.xy, 0.0, 1.0);
-				gl_FragColor = vec4(c.rgb, 1.0);
-		}
-	
-		</script>
 
 
 	<script>
@@ -262,7 +232,7 @@
 		var fs = document.getElementById('fragmentShader').textContent;
 
 		var mesh1, mesh2, mesh3;
-		var light1_cube, light2_cubess;
+		var light1_cube, light2_cube, light3_cubess;
 		var light1_flag = false, light2_flag = false;
 		var cup;
 		var material;
@@ -315,6 +285,13 @@
 			light2_cube = new THREE.Mesh(light2_geometry, cube2_material);
 			light2_cube.position.set(light2_pos.x, light2_pos.y, light2_pos.z);
 			scene.add(light2_cube);
+
+			//light3 cube
+			var light3_geometry = new THREE.SphereGeometry(0.5, 32, 32);
+			var cube3_material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+			light3_cube = new THREE.Mesh(light3_geometry, cube3_material);
+			light3_cube.position.set(light3_pos.x, light3_pos.y, light3_pos.z);
+			scene.add(light3_cube);
 
 			//materials (ie, linking to the shader program)
 
@@ -397,6 +374,7 @@
 				var s = 1;
 				object.scale.set(s, s, s);
 				object.position.x = 3.0;
+				object.position.y = -1.0;
 
 				mesh2 = object;
 				scene.add(mesh2);
@@ -457,19 +435,20 @@
 			}
 			light2_cube.position.set(light2_pos.x, light2_pos.y, light2_pos.z);
 
-			light3_pos.y += 0.01; 
+			light3_pos.x = Math.sin( time * 0.001 ) * 2+ 3;
+			light3_pos.y = Math.cos( time * 0.001 ) * 2;
+			light3_pos.z = Math.sin( time * 0.001 ) * 2;
+			light3_cube.position.set(light3_pos.x, light3_pos.y, light3_pos.z);
 
-			//mesh1.rotation.x = time * 0.0003;
+			mesh1.rotation.x = time * 0.0003;
 
-			mesh2.rotation.z = time * 0.0005;
+			// mesh2.rotation.z = time * 0.0005;
 			// mesh2.rotation.y = time * 0.001;
+			mesh2.position.x = Math.sin( time * 0.001)  + 3
 
 			//cup.rotation.x = time *0.0007;
 			cup.rotation.y = time * 0.0001;
 			cup.material.uniforms.time.value = time * 0.0006;
-
-			//if I want to update the lights, I acutally have to update the material used by each object in the scene. 
-			//material.uniforms.light1_diffuse.value = new THREE.Vector3(0.0,1.0,0.0);
 
 			renderer.render(scene, camera);
 		}
