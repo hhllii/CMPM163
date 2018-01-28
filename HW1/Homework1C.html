@@ -71,63 +71,92 @@
 			arr[6] = texture2D( bufferTexture, vec2( left , cy ));   //W
 			arr[7] = texture2D( bufferTexture, vec2( left , up ));   //NW
 
-			vec4 color[3];
-			color[0] = vec4(227.0/255.0, 48.0/255.0, 108.0/255.0, 255.0/255.0); //pink
-			color[1] = vec4(50.0/255.0, 172.0/255.0, 237.0/255.0, 255.0/255.0); //blue
-			color[2] = vec4(113.0/255.0, 237.0/255.0, 78.0/255.0, 255.0/255.0); //green
+			// vec4 color[3];
+			// color[0] = vec4(227.0/255.0, 48.0/255.0, 108.0/255.0, 255.0/255.0); //pink
+			// color[1] = vec4(50.0/255.0, 172.0/255.0, 237.0/255.0, 255.0/255.0); //blue
+			// color[2] = vec4(113.0/255.0, 237.0/255.0, 78.0/255.0, 255.0/255.0); //green
 
-			//find state
-			int state;
-			for(int a = 0; a < 3; a++){
-				if(color[a] == C)
-				state = a;
-			}
-			int successor = state +1;
-			//find neighbor state
-			int scount = 0;
-			for(int b = 0; b < 8; b++){
-				if(state == 2){
-					if (arr[b] == color[0]) {
-					scount++;
-					}
-				}else if (arr[b] == color[successor]){
-					scount++;
-				}
-			}
+			// //find state
+			// int state;
+			// for(int a = 0; a < 3; a++){
+			// 	if(color[a] == C)
+			// 	state = a;
+			// }
+			// int successor = state +1;
+			// //find neighbor state
+			// int scount = 0;
+			// for(int b = 0; b < 8; b++){
+			// 	if(state == 2){
+			// 		if (arr[b] == color[0]) {
+			// 		scount++;
+			// 		}
+			// 	}else if (arr[b] == color[successor]){
+			// 		scount++;
+			// 	}
+			// }
 
 			//change state
-			if(scount >= threshold){
+			// if(scount >= threshold){
 
-			}
+			// }
 
-			int cnt = 0;
-			for(int i=0;i<8;i++){
-				if (arr[i].r > 0.5) {
-					cnt++;
+			int count = 0;
+			for(int i = 0; i < 8; i++){
+				if(arr[i].r < 0.33){
+					if(C.r > 0.66){
+						count++;
+					}
+				}else if(arr[i].r > 0.66){
+					if(C.r > 0.33 && C.r < 0.66){
+						count++;
+					}
+				}else{
+					if(C.r < 0.33){
+						count++;
+					}
 				}
 			}
+
+			if(count >= threshold){
+				if(C.r > 0.66){ //to 0-0.33
+					gl_FragColor = vec4(0.2,0.7,0.3,1.0);
+				}else if(C.r < 0.33){ // to 0.33-0.66
+					gl_FragColor = vec4(0.5,0.2,0.1,1.0);
+				}else{//to 0.66-1
+					gl_FragColor = vec4(0.8,0.1,0.7,1.0);
+				}
+			}else{
+				gl_FragColor = C;
+			}
+
+			// int cnt = 0;
+			// for(int i=0;i<8;i++){
+			// 	if (arr[i].r > 0.5) {
+			// 		cnt++;
+			// 	}
+			// }
 				        
-			if (C.r >= 0.5) { //cell is alive
-				if (cnt == 2 || cnt == 3) {
-					//Any live cell with two or three live neighbours lives on to the next generation.
+			// if (C.r >= 0.5) { //cell is alive
+			// 	if (cnt == 2 || cnt == 3) {
+			// 		//Any live cell with two or three live neighbours lives on to the next generation.
 				
-					gl_FragColor = color[0];
-				} else {
-					//Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
-					//Any live cell with more than three live neighbours dies, as if by overpopulation.
+			// 		gl_FragColor = vec4(1.0,0.6,0.3,1.0);
+			// 	} else {
+			// 		//Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
+			// 		//Any live cell with more than three live neighbours dies, as if by overpopulation.
 
-					gl_FragColor = vec4(0.0,0.6,0.3,1.0);
-				}
-			} else { //cell is dead
-				if (cnt == 3) {
-					//Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+			// 		gl_FragColor = vec4(0.0,0.6,0.3,1.0);
+			// 	}
+			// } else { //cell is dead
+			// 	if (cnt == 3) {
+			// 		//Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
 
-					gl_FragColor = vec4(1.0,1.0,1.0,1.0);
-				} else {
-					gl_FragColor = vec4(0.0,0.6,0.3,1.0);
+			// 		gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+			// 	} else {
+			// 		gl_FragColor = vec4(0.0,0.6,0.3,1.0);
 
-				}
-			}
+			// 	}
+			// }
 
 		 }
 	</script>
@@ -252,22 +281,27 @@ function createDataTexture() {
 	for ( var i = 0; i < size; i++ ) {
 
 		var stride = i * 4;
-		data[ stride ] = Math.random() * 255;
-		data[ stride + 1 ] = Math.random() * 255;
-		data[ stride + 2 ] = Math.random() * 255;
-		data[ stride + 3 ] = 255;
-		// if (Math.random() < 0.5) {
-		// 	data[ stride ] = 255;
-		// 	data[ stride + 1 ] = 255;
-		// 	data[ stride + 2 ] = 255;
-		// 	data[ stride + 3 ] = 255;
-		// }
-		// else {
-		// 	data[ stride ] = 0;
-		// 	data[ stride + 1 ] = 0;
-		// 	data[ stride + 2 ] = 0;
-		// 	data[ stride + 3 ] = 255;
-		// }
+		// data[ stride ] = Math.random() * 255;
+		// data[ stride + 1 ] = Math.random() * 255;
+		// data[ stride + 2 ] = Math.random() * 255;
+		// data[ stride + 3 ] = 255;
+		if (Math.random() < 0.33) {
+			data[ stride ] = 255 * 0.2;
+			data[ stride + 1 ] = 255 * 0.7;
+			data[ stride + 2 ] = 255 * 0.3;
+			data[ stride + 3 ] = 255;
+		}
+		else if (Math.random() > 0.66){
+			data[ stride ] = 255 * 0.8;
+			data[ stride + 1 ] = 255 * 0.1;
+			data[ stride + 2 ] = 255 * 0.7;
+			data[ stride + 3 ] = 255;
+		}else{
+			data[ stride ] = 255 * 0.5;
+			data[ stride + 1 ] = 255 * 0.2;
+			data[ stride + 2 ] = 255 * 0.1;
+			data[ stride + 3 ] = 255;
+		}
 	}
 
 
