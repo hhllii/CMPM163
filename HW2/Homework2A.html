@@ -235,7 +235,7 @@
 		var container;
 		var camera, scene, renderer;
 
-		var skyMesh, box;
+		var skyMesh, box, water;
 		var displaceAmt_value = 0;
 
 		var texture1;
@@ -323,12 +323,11 @@
 			});
 
 
-
-			var objTex = new THREE.TextureLoader().load('jaguar.png');
-			var uniforms2 = {
-				tex: { type: "t", value: objTex },
-			};
-
+			var water_geometry = new THREE.PlaneGeometry( 50, 50, 300, 300 );
+			water = new THREE.Mesh(water_geometry, material2);
+			water.rotateX(-Math.PI/2);
+			water.position.y = 2.0;
+			scene.add(water);
 
 			var gBox = new THREE.BoxGeometry(1, 1, 1);
 			box = new THREE.Mesh(gBox, material2);
