@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - blender -json</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			background: #777;
+			padding: 0;
+			margin: 0;
+			overflow: hidden;
+		}
+
+		#info {
+			position: absolute;
+			top: 0px;
+			width: 100%;
+			color: #ffffff;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div id="container"></div>
+
+	<script src="js/three.js"></script>
+	<script src="js/loader/OBJLoader.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+
+	<script id="skyboxVS" type="x-shader/x-vertex">
+
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+      	uniform mat4 projectionMatrix;
+
+     	attribute vec3 position; 
+
+	varying vec3 vWorldPosition;
+	
+	void main() {
+
+		vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+		vWorldPosition = worldPosition.xyz;
+
+		vec4 p = viewMatrix * modelMatrix * vec4(position, 1.0);
+		gl_Position = projectionMatrix * p;
+		
+     	 }
+
+    </script>
+
+
+	<script id="skyboxFS" type="x-shader/x-fragment">
+
+		precision mediump float;
+		
+		uniform samplerCube tCube;
+		varying vec3 vWorldPosition;
+
+		void main() {
+
+			gl_FragColor = textureCube( tCube, vec3(  vWorldPosition ) );
+		}
+	
+    </script>
+
+
+	<script id="environmentMapVS" type="x-shader/x-vertex">
+
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+      	uniform mat4 projectionMatrix;
+
+	uniform vec3 cameraPosition;
+	
+     	attribute vec3 position; 
+     	attribute vec3 normal; 
+
+	varying vec3 vI;
+	varying vec3 vWorldNormal;
+
+	void main() {
+  		vec4 mvPosition = viewMatrix * modelMatrix * vec4( position, 1.0 );
+  		vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+
+  		vWorldNormal = normalize( mat3( modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz ) * normal );
+
+  		vI = worldPosition.xyz - cameraPosition;
+
+  		gl_Position = projectionMatrix * mvPosition;
+	}	
+  
+	</script>
+
+	<script id="environmentMapFS" type="x-shader/x-fragment">
+
+		precision mediump float;
+
+		uniform samplerCube envMap;
+
+		varying vec3 vI, vWorldNormal;
+
+		void main() {
+  			vec3 reflection = reflect( vI, vWorldNormal );
+  			vec4 envColor = textureCube( envMap, vec3( -reflection.x, reflection.yz ) );
+  			gl_FragColor = vec4(envColor);
+		}
+  
+	</script>
+
+
+	<script id="texVS" type="x-shader/x-vertex">
+
+	//Three.js gives us these automatically when a perspective camera is bound to the renderer
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+      	uniform mat4 projectionMatrix;
+
+     	attribute vec3 position;
+	attribute vec2 uv;
+
+	varying vec2 vUV;
+
+	void main() {
+        	vec4 position = viewMatrix * modelMatrix * vec4(position, 1.0);
+	   	vUV = uv;
+        	gl_Position = projectionMatrix * position; 
+     	 }
+
+    </script>
+
+	<script id="texFS" type="x-shader/x-fragment">
+
+	precision mediump float;
+
+	uniform sampler2D tex;
+	varying vec2 vUV;
+
+      	void main() {
+
+		vec4 c = texture2D(tex, vUV);
+        	//gl_FragColor = vec4(vUV.xy, 0.0, 1.0);
+        	gl_FragColor = vec4(c.rgb, 1.0);
+	}
+
+	</script>
+
+	<script id="terrainVS" type="x-shader/x-vertex">
+
+		uniform mat4 modelMatrix;
+		uniform mat4 viewMatrix;
+			  uniform mat4 projectionMatrix;
+		uniform sampler2D tPic;
+	
+			 attribute vec3 position;
+		attribute vec2 uv;
+		attribute vec3 normal;
+	
+		uniform float displaceAmt; //controls the amount of vertex displacement...
+		
+			  varying float vDisplace; 
+		varying vec2 vUv;
+	
+	
+	
+			precision mediump float;
+	
+	
+		void main() {
+		   
+				   vUv = uv;
+			
+			vec4 clr = texture2D(tPic, uv);
+			vDisplace = clr.r * displaceAmt; //displacement;
+				vec3 newPosition = (position.xyz + normal.xyz * vDisplace).xyz;
+		  
+				   gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
+			}
+	
+		</script>
+
+	<script id="terrainFS" type="x-shader/x-fragment">
+	
+		  precision mediump float;
+	
+		  uniform sampler2D tGrass, tSnow, tHill;
+	
+	
+		  varying vec2 vUv;
+		  varying float vDisplace; 
+	
+	
+		  void main() {
+	
+		vec4 grass = texture2D(tGrass, vUv);
+		vec4 snow = texture2D(tSnow, vUv);
+		vec4 hill = texture2D(tHill, vUv);
+	
+		float zOffset = vDisplace;
+	
+		vec4 mix1 = mix(grass, hill, min(1.0,zOffset*6.0));
+		vec4 mix2 = max(vec4(1.0), mix(hill, snow, zOffset) * 0.05);
+		vec4 mix3 = mix(mix1, mix2, zOffset*0.10);
+	
+	
+		gl_FragColor = vec4( mix3.rgb, 1.0 );        
+	
+	   }
+	
+		</script>
+
+	<script>
+
+		var sb_vs = document.getElementById('skyboxVS').textContent;
+		var sb_fs = document.getElementById('skyboxFS').textContent;
+
+		var em_vs = document.getElementById('environmentMapVS').textContent;
+		var em_fs = document.getElementById('environmentMapFS').textContent;
+		var tex_vs = document.getElementById('texVS').textContent;
+		var tex_fs = document.getElementById('texFS').textContent;
+		var terr_vs = document.getElementById('terrainVS').textContent;
+		var terr_fs = document.getElementById('terrainFS').textContent;
+
+		//terrianTexture
+		var heightMap = new THREE.TextureLoader().load('res/Heightmap.png');
+		var grass = new THREE.TextureLoader().load('res/grass.png');
+		var snow = new THREE.TextureLoader().load('res/snow.jpg');
+		var hill = new THREE.TextureLoader().load('res/hill.jpg');
+
+
+		var container;
+		var camera, scene, renderer;
+
+		var skyMesh, box;
+		var displaceAmt_value = 0;
+
+		var texture1;
+
+		init();
+		animate();
+
+
+
+		function init() {
+
+			container = document.getElementById('container');
+
+			camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+			camera.position.set(20, 20, 5);
+
+			scene = new THREE.Scene();
+			
+			//create terrain
+			var terr_geometry = new THREE.PlaneGeometry( 50, 50, 300, 300 );
+			var terr_uniforms = {
+				displaceAmt: { type: "f", value: 0.0 },
+				tPic: { type: "t", value: heightMap },
+				tGrass: { type: "t", value: grass },
+				tSnow: { type: "t", value: snow },
+				tHill: { type: "t", value: hill },
+			};
+
+
+			var terr_material = new THREE.RawShaderMaterial({
+
+				uniforms: terr_uniforms,
+				vertexShader: terr_vs,
+				fragmentShader: terr_fs,
+			});
+
+			var terrain = new THREE.Mesh( terr_geometry, terr_material );
+			terrain.material.side = THREE.DoubleSide;
+			terrain.rotateX(-Math.PI/2);
+			scene.add( terrain );
+
+
+			var cubeMap = new THREE.CubeTextureLoader()
+				.setPath("./GoldenGateBridge2/")
+				.load([
+					'posx.jpg',
+					'negx.jpg',
+					'posy.jpg',
+					'negy.jpg',
+					'posz.jpg',
+					'negz.jpg'
+				]);
+
+			var uniforms = { "tCube": { type: "t", value: cubeMap } };
+
+			var material = new THREE.RawShaderMaterial({
+				uniforms: uniforms,
+				vertexShader: sb_vs,
+				fragmentShader: sb_fs
+			});
+
+
+			material.depthWrite = false;
+			material.side = THREE.BackSide;
+
+
+			var geometry = new THREE.BoxGeometry(2000, 2000, 2000);
+
+			skyMesh = new THREE.Mesh(geometry, material);
+
+
+			scene.add(skyMesh);
+
+
+
+			var uniforms2 = {
+				tCube: { type: "t", value: cubeMap },
+			};
+
+
+			var material2 = new THREE.RawShaderMaterial({
+				uniforms: uniforms2,
+				vertexShader: em_vs,
+				fragmentShader: em_fs
+			});
+
+
+
+			var objTex = new THREE.TextureLoader().load('jaguar.png');
+			var uniforms2 = {
+				tex: { type: "t", value: objTex },
+			};
+
+
+			var gBox = new THREE.BoxGeometry(1, 1, 1);
+			box = new THREE.Mesh(gBox, material2);
+			box.position.x -= 1.0;
+			box.position.y = 10;
+			scene.add(box);
+
+			var light = new THREE.AmbientLight(0x404040); // soft white light
+			light.intensity = 10;
+			scene.add(light);
+
+			//GUI
+			gui = new dat.GUI();
+			terrain = {
+				displaceAmt: 0,
+			}
+			var terr_folder = gui.addFolder('Terrain');
+			var terr_displace = terr_folder.add(terrain, 'displaceAmt').min(0).max(20).step(0.01).listen();
+			terr_displace.onChange(function(value){
+				displaceAmt_value = value;
+			});
+			terr_folder.open()
+
+			gui.open()//end gui
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
+			//controls
+			controls = new THREE.OrbitControls(camera, renderer.domElement);
+			window.addEventListener('resize', onWindowResize, false);
+			document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+		}
+
+
+		function onWindowResize(event) {
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+		}
+
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+			render();
+		}
+
+		var mouseX = 0.5;
+		var mouseY = 0.5;
+		var prevMouseX = 0.5;
+		var prevMouseY = 0.5;
+
+		function render() {
+
+			// if (mouseX < prevMouseX) {
+			// 	camera.rotation.y += 0.03;
+			// } else if (mouseX > prevMouseX) {
+			// 	camera.rotation.y -= 0.03;
+			// }
+
+			// prevMouseX = mouseX;
+			// prevMouseY = mouseY;
+
+			var terrain = scene.children[ 0 ];
+			//	terrain.material.uniforms.displaceAmt.value = 0.5 * (1.0 + Math.sin(time * 0.0001)); 
+        	terrain.material.uniforms.displaceAmt.value = displaceAmt_value;
+			box.rotation.y += 0.001;
+			box.rotation.x -= 0.002;
+
+			renderer.render(scene, camera);
+		}
+
+		function onDocumentMouseMove(event) {
+			event.preventDefault();
+
+			mouseX = (event.clientX / window.innerWidth);
+			mouseY = -(event.clientY / window.innerHeight);
+
+		}
+
+
+	</script>
+</body>
+
+</html>
