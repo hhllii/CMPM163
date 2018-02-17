@@ -175,7 +175,7 @@ THREE.GPUParticleSystem = function ( options ) {
 	this.particleNoiseTex = this.PARTICLE_NOISE_TEXTURE || textureLoader.load( 'res/perlin-512.png' );
 	this.particleNoiseTex.wrapS = this.particleNoiseTex.wrapT = THREE.RepeatWrapping;
 
-	this.particleSpriteTex = this.PARTICLE_SPRITE_TEXTURE || textureLoader.load( 'res/snowflake.png' );
+	this.particleSpriteTex = this.PARTICLE_SPRITE_TEXTURE || textureLoader.load( 'res/particle2.png' );
 	this.particleSpriteTex.wrapS = this.particleSpriteTex.wrapT = THREE.RepeatWrapping;
 
 	this.particleShaderMat = new THREE.ShaderMaterial( {
