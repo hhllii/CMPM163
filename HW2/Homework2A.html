@@ -236,7 +236,7 @@
 		var camera, scene, renderer;
 
 		var skyMesh, box, water;
-		var displaceAmt_value = 0;
+		var displaceAmt_value = 5.0;
 
 		var texture1;
 
@@ -342,7 +342,10 @@
 			//GUI
 			gui = new dat.GUI();
 			terrain = {
-				displaceAmt: 0,
+				displaceAmt: 5.0,
+			}
+			water_g = {
+				height: 2.0,
 			}
 			var terr_folder = gui.addFolder('Terrain');
 			var terr_displace = terr_folder.add(terrain, 'displaceAmt').min(0).max(20).step(0.01).listen();
@@ -350,6 +353,13 @@
 				displaceAmt_value = value;
 			});
 			terr_folder.open()
+
+			var water_folder = gui.addFolder('Water');
+			var water_height = water_folder.add(water_g, 'height').min(0).max(20).step(0.01).listen();
+			water_height.onChange(function(value){
+				water.position.y = value;
+			});
+			water_folder.open()
 
 			gui.open()//end gui
 
