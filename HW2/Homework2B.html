@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>three.js - gpu particle system</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+	body {
+		font-family: Monospace;
+		background-color: #f0f0f0;
+		margin: 0px;
+		overflow: hidden;
+	}
+
+	#info {
+		position: absolute;
+		top: 0px;
+		width: 100%;
+		padding: 5px;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		color: #ffffff;
+	}
+
+	a {
+		color: #ffffff;
+	}
+	</style>
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GPU particle system plugin by <a href="http://charliehoey.com">Charlie Hoey</a>.
+	</div>
+
+	<script src="./js/three.js"></script>
+	<script src="./js/controls/OrbitControls.js"></script>
+	<script src="./js/dat.gui.min.js"></script>
+	<script src="./js/stats.min.js"></script>
+	<script src="./js/GPUParticleSystem.js"></script>
+
+	<script id="terrainVS" type="x-shader/x-vertex">
+
+		uniform mat4 modelMatrix;
+		uniform mat4 viewMatrix;
+			  uniform mat4 projectionMatrix;
+		uniform sampler2D tPic;
+	
+			 attribute vec3 position;
+		attribute vec2 uv;
+		attribute vec3 normal;
+	
+		uniform float displaceAmt; //controls the amount of vertex displacement...
+		
+			  varying float vDisplace; 
+		varying vec2 vUv;
+	
+	
+	
+			precision mediump float;
+	
+	
+		void main() {
+		   
+				   vUv = uv;
+			
+			vec4 clr = texture2D(tPic, uv);
+			vDisplace = clr.r * displaceAmt; //displacement;
+				vec3 newPosition = (position.xyz + normal.xyz * vDisplace).xyz;
+		  
+				   gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( newPosition, 1.0 );
+			}
+	
+		</script>
+
+	<script id="terrainFS" type="x-shader/x-fragment">
+	
+		  precision mediump float;
+	
+		  uniform sampler2D tGrass, tSnow, tHill;
+	
+	
+		  varying vec2 vUv;
+		  varying float vDisplace; 
+	
+	
+		  void main() {
+	
+		vec4 grass = texture2D(tGrass, vUv);
+		vec4 snow = texture2D(tSnow, vUv);
+		vec4 hill = texture2D(tHill, vUv);
+	
+		float zOffset = vDisplace;
+	
+		vec4 mix1 = mix(grass, hill, min(1.0,zOffset*6.0));
+		vec4 mix2 = max(vec4(1.0), mix(hill, snow, zOffset) * 0.05);
+		vec4 mix3 = mix(mix1, mix2, zOffset*0.10);
+	
+	
+		gl_FragColor = vec4( mix3.rgb, 1.0 );        
+	
+	   }
+	
+		</script>
+
+	<script>
+		var terr_vs = document.getElementById('terrainVS').textContent;
+		var terr_fs = document.getElementById('terrainFS').textContent;
+
+		//terrianTexture
+		var heightMap = new THREE.TextureLoader().load('res/Heightmap.png');
+		var grass = new THREE.TextureLoader().load('res/grass.png');
+		var snow = new THREE.TextureLoader().load('res/snow.jpg');
+		var hill = new THREE.TextureLoader().load('res/hill.jpg');
+
+		var camera, tick = 0,
+			scene, renderer, clock = new THREE.Clock(),
+			controls, container, gui = new dat.GUI( { width: 350 } ),
+			options, spawnerOptions, particleSystem;
+
+		var stats;
+
+		init();
+		animate();
+
+		function init() {
+
+			//
+
+			container = document.getElementById( 'container' );
+
+			camera = new THREE.PerspectiveCamera( 28, window.innerWidth / window.innerHeight, 1, 10000 );
+			camera.position.set(50,50,50);
+
+			scene = new THREE.Scene();
+
+			//create terrain
+			var terr_geometry = new THREE.PlaneGeometry( 50, 50, 300, 300 );
+			var terr_uniforms = {
+				displaceAmt: { type: "f", value: 0.0 },
+				tPic: { type: "t", value: heightMap },
+				tGrass: { type: "t", value: grass },
+				tSnow: { type: "t", value: snow },
+				tHill: { type: "t", value: hill },
+			};
+
+
+			var terr_material = new THREE.RawShaderMaterial({
+
+				uniforms: terr_uniforms,
+				vertexShader: terr_vs,
+				fragmentShader: terr_fs,
+			});
+
+			var terrain = new THREE.Mesh( terr_geometry, terr_material );
+			terrain.material.side = THREE.DoubleSide;
+			terrain.rotateX(-Math.PI/2);
+			scene.add( terrain );
+
+			// The GPU Particle system extends THREE.Object3D, and so you can use it
+			// as you would any other scene graph component.	Particle positions will be
+			// relative to the position of the particle system, but you will probably only need one
+			// system for your whole scene
+
+			particleSystem = new THREE.GPUParticleSystem( {
+				maxParticles: 250000
+			} );
+
+			scene.add( particleSystem );
+			//texture
+			var textureLoader = new THREE.TextureLoader();
+
+			// options passed during each spawned
+
+			options = {
+				position: new THREE.Vector3(0,30,0),
+				positionRandomness: 50,
+				velocity: new THREE.Vector3(0, -1 ,0),
+				velocityRandomness: 1.0,
+				//color: 0xaa88ff,
+				colorRandomness: .0,
+				turbulence: .1,
+				lifetime: 2,
+				size: 10,
+				sizeRandomness: 1,
+				particleNoiseTex: textureLoader.load( 'res/perlin-512.png' ),
+				particleSpriteTex: textureLoader.load( 'res/snowflake.png' )
+			};
+
+			spawnerOptions = {
+				spawnRate: 1500,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 1
+			};
+
+			//
+
+			gui.add( options, "velocityRandomness", 0, 3 );
+			gui.add( options, "size", 1, 20 );
+			gui.add( options, "sizeRandomness", 0, 25 );
+			gui.add( options, "colorRandomness", 0, 1 );
+			gui.add( options, "lifetime", .1, 10 );
+			gui.add( options, "turbulence", 0, 1 );
+
+			gui.add( spawnerOptions, "spawnRate", 10, 30000 );
+			gui.add( spawnerOptions, "timeScale", -1, 1 );
+
+			//
+
+			stats = new Stats();
+			container.appendChild( stats.dom );
+
+			//
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			container.appendChild( renderer.domElement );
+
+			//
+
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+			window.addEventListener( 'resize', onWindowResize, false );
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function animate() {
+
+			requestAnimationFrame( animate );
+
+			controls.update();
+
+			var delta = clock.getDelta() * spawnerOptions.timeScale;
+
+			tick += delta;
+
+			if ( tick < 0 ) tick = 0;
+
+			if ( delta > 0 ) {
+
+				//options.position.x = Math.sin( tick * spawnerOptions.horizontalSpeed ) * 20;
+				// options.position.y = Math.sin( tick * spawnerOptions.verticalSpeed ) * 10;
+				// options.position.z = Math.sin( tick * spawnerOptions.horizontalSpeed + spawnerOptions.verticalSpeed ) * 5;
+
+				for ( var x = 0; x < spawnerOptions.spawnRate * delta; x++ ) {
+
+					// Yep, that's really it.	Spawning particles is super cheap, and once you spawn them, the rest of
+					// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
+
+					particleSystem.spawnParticle( options );
+
+				}
+
+			}
+
+			particleSystem.update( tick );
+
+			render();
+
+			stats.update();
+
+		}
+
+		function render() {
+			var terrain = scene.children[ 0 ]
+			terrain.material.uniforms.displaceAmt.value = 10;
+			renderer.render( scene, camera );
+
+		}
+
+	</script>
+</body>
+
+</html>
