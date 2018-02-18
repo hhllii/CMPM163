@@ -26,7 +26,14 @@ link: https://hhllii.github.io/CMPM163/HW2/Homework2A.html <br>
 positionStartAttribute.array[ i * 3 + 1 ] = position.y 
 ```
 -Noise function<br>
-    The GPUParticleSystem uses the noise texture to caculate the noise. Input the noise texture to particleNoiseTex.<br>
+    The GPUParticleSystem uses the noise texture to caculate the noise. Input the noise texture to particleNoiseTex. But that does not use the noise fuction...Then I try to add the WebGL-noise function into the particle system. It seems that no way to pass the shader to GPUParticleSystem. So I directly modified the shader in GPUParticleSystem.js. I choosed the classicnoise3D.glsl as noise function then put it into the GPUParticleShader. And I change the codes that caculate the noise to apply my noise function.<br>
+```java script
+'	float noiseV = pnoise( newPosition.xyz, vec3(10.0) );',
+//'	newPosition = mix( newPosition, newPosition + vec3( noiseVel * ( turbulence * 5.0 ) ), ( timeElapsed / lifeTime ) );',
+'	newPosition = mix( newPosition, newPosition + normal * noiseV * ( turbulence * 5.0 ) , ( timeElapsed / lifeTime ) );',
+```
+The particle will move the position along the normal by this function<br>
+However, it's hard to see the difference after applying noise function with the snow generator...<br>
 -Gui<br>
     dat.gui can control some parameters of the particle system.<br>
 -Textured point sprites<br>
