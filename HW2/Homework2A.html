@@ -287,7 +287,7 @@
 
 
 			var cubeMap = new THREE.CubeTextureLoader()
-				.setPath("./GoldenGateBridge2/")
+				.setPath("./Teide/")
 				.load([
 					'posx.jpg',
 					'negx.jpg',
@@ -338,6 +338,9 @@
 			water_three = new THREE.Water( water_geometry, {
 				textureWidth: 512,
 				textureHeight: 512,
+				waterNormals: new THREE.TextureLoader().load( 'res/waternormals.jpg', function ( texture ) {
+							texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+						}),
 				waterColor: 0x001e0f,
 				distortionScale: 1,
 			} );
@@ -405,6 +408,8 @@
 
 			gui.open()//end gui
 
+			var light = new THREE.AmbientLight( 0xFF0000 , 100);
+
 			renderer = new THREE.WebGLRenderer();
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
@@ -453,6 +458,11 @@
         	terrain.material.uniforms.displaceAmt.value = displaceAmt_value;
 			box.rotation.y += 0.001;
 			box.rotation.x -= 0.002;
+
+			water_three.material.uniforms.time.value += 1.0 / 60.0;
+			//water_three.material.uniforms.size.value = parameters.size;
+			water_three.material.uniforms.distortionScale.value = 1.0;
+			water_three.material.uniforms.alpha.value =1.0;
 
 			renderer.render(scene, camera);
 		}
