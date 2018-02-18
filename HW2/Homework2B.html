@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<title>three.js - gpu particle system</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<style>
-	body {
-		font-family: Monospace;
-		background-color: #f0f0f0;
-		margin: 0px;
-		overflow: hidden;
-	}
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
 
-	#info {
-		position: absolute;
-		top: 0px;
-		width: 100%;
-		padding: 5px;
-		font-family:Monospace;
-		font-size:13px;
-		text-align:center;
-		color: #ffffff;
-	}
+		#info {
+			position: absolute;
+			top: 0px;
+			width: 100%;
+			padding: 5px;
+			font-family: Monospace;
+			font-size: 13px;
+			text-align: center;
+			color: #ffffff;
+		}
 
-	a {
-		color: #ffffff;
-	}
+		a {
+			color: #ffffff;
+		}
 	</style>
 </head>
 
@@ -33,7 +34,8 @@
 
 	<div id="container"></div>
 	<div id="info">
-		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GPU particle system plugin by <a href="http://charliehoey.com">Charlie Hoey</a>.
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GPU particle system plugin by
+		<a href="http://charliehoey.com">Charlie Hoey</a>.
 	</div>
 
 	<script src="./js/three.js"></script>
@@ -41,6 +43,8 @@
 	<script src="./js/dat.gui.min.js"></script>
 	<script src="./js/stats.min.js"></script>
 	<script src="./js/GPUParticleSystem.js"></script>
+	<script src="./js/ParticleEngine.js"></script>
+
 
 	<script id="terrainVS" type="x-shader/x-vertex">
 
@@ -106,6 +110,8 @@
 	
 		</script>
 
+
+
 	<script>
 		var terr_vs = document.getElementById('terrainVS').textContent;
 		var terr_fs = document.getElementById('terrainFS').textContent;
@@ -118,7 +124,7 @@
 
 		var camera, tick = 0,
 			scene, renderer, clock = new THREE.Clock(),
-			controls, container, gui = new dat.GUI( { width: 350 } ),
+			controls, container, gui = new dat.GUI({ width: 350 }),
 			options, spawnerOptions, particleSystem;
 
 		var stats;
@@ -130,15 +136,15 @@
 
 			//
 
-			container = document.getElementById( 'container' );
+			container = document.getElementById('container');
 
-			camera = new THREE.PerspectiveCamera( 28, window.innerWidth / window.innerHeight, 1, 10000 );
-			camera.position.set(50,50,50);
+			camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 1, 10000);
+			camera.position.set(50, 50, 50);
 
 			scene = new THREE.Scene();
 
 			//create terrain
-			var terr_geometry = new THREE.PlaneGeometry( 50, 50, 300, 300 );
+			var terr_geometry = new THREE.PlaneGeometry(50, 50, 300, 300);
 			var terr_uniforms = {
 				displaceAmt: { type: "f", value: 0.0 },
 				tPic: { type: "t", value: heightMap },
@@ -155,10 +161,10 @@
 				fragmentShader: terr_fs,
 			});
 
-			var terrain = new THREE.Mesh( terr_geometry, terr_material );
+			var terrain = new THREE.Mesh(terr_geometry, terr_material);
 			terrain.material.side = THREE.DoubleSide;
-			terrain.rotateX(-Math.PI/2);
-			scene.add( terrain );
+			terrain.rotateX(-Math.PI / 2);
+			scene.add(terrain);
 
 			//texture
 			var textureLoader = new THREE.TextureLoader();
@@ -167,25 +173,25 @@
 			// relative to the position of the particle system, but you will probably only need one
 			// system for your whole scene
 
-			particleSystem = new THREE.GPUParticleSystem( {
+			particleSystem = new THREE.GPUParticleSystem({
 				maxParticles: 250000,
-				particleNoiseTex: textureLoader.load( 'res/perlin-512.png' ),
-				particleSpriteTex: textureLoader.load( 'res/snowflake.png' )
-			} );
+				particleNoiseTex: textureLoader.load('res/perlin-512.png'),
+				particleSpriteTex: textureLoader.load('res/snowflake.png')
+			});
 
-			scene.add( particleSystem );
+			scene.add( particleSystem);
 
 			// options passed during each spawned
 
 			options = {
-				position: new THREE.Vector3(0,25,0),
+				position: new THREE.Vector3(0, 25, 0),
 				positionRandomness: 50,
-				velocity: new THREE.Vector3(0, -1 ,0),
+				velocity: new THREE.Vector3(0, -1, 0),
 				velocityRandomness: 1.0,
 				//color: 0xaa88ff,
 				colorRandomness: .0,
 				turbulence: .1,
-				lifetime: 2,
+				lifetime: 4,
 				size: 10,
 				sizeRandomness: 1
 			};
@@ -199,33 +205,33 @@
 
 			//
 
-			gui.add( options, "velocityRandomness", 0, 3 );
-			gui.add( options, "size", 1, 20 );
-			gui.add( options, "sizeRandomness", 0, 25 );
-			gui.add( options, "colorRandomness", 0, 1 );
-			gui.add( options, "lifetime", .1, 10 );
-			gui.add( options, "turbulence", 0, 1 );
+			gui.add(options, "velocityRandomness", 0, 3);
+			gui.add(options, "size", 1, 20);
+			gui.add(options, "sizeRandomness", 0, 25);
+			gui.add(options, "colorRandomness", 0, 1);
+			gui.add(options, "lifetime", .1, 10);
+			gui.add(options, "turbulence", 0, 1);
 
-			gui.add( spawnerOptions, "spawnRate", 10, 30000 );
-			gui.add( spawnerOptions, "timeScale", -1, 1 );
+			gui.add(spawnerOptions, "spawnRate", 10, 30000);
+			gui.add(spawnerOptions, "timeScale", -1, 1);
 
 			//
 
 			stats = new Stats();
-			container.appendChild( stats.dom );
+			container.appendChild(stats.dom);
 
 			//
 
 			renderer = new THREE.WebGLRenderer();
-			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			container.appendChild( renderer.domElement );
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
 
 			//
 
-			controls = new THREE.OrbitControls( camera, renderer.domElement );
+			controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-			window.addEventListener( 'resize', onWindowResize, false );
+			window.addEventListener('resize', onWindowResize, false);
 
 		}
 
@@ -234,13 +240,13 @@
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
 
-			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setSize(window.innerWidth, window.innerHeight);
 
 		}
 
 		function animate() {
 
-			requestAnimationFrame( animate );
+			requestAnimationFrame(animate);
 
 			controls.update();
 
@@ -248,26 +254,26 @@
 
 			tick += delta;
 
-			if ( tick < 0 ) tick = 0;
+			if (tick < 0) tick = 0;
 
-			if ( delta > 0 ) {
+			if (delta > 0) {
 
 				//options.position.x = Math.sin( tick * spawnerOptions.horizontalSpeed ) * 20;
 				// options.position.y = Math.sin( tick * spawnerOptions.verticalSpeed ) * 10;
 				// options.position.z = Math.sin( tick * spawnerOptions.horizontalSpeed + spawnerOptions.verticalSpeed ) * 5;
 
-				for ( var x = 0; x < spawnerOptions.spawnRate * delta; x++ ) {
+				for (var x = 0; x < spawnerOptions.spawnRate * delta; x++) {
 
 					// Yep, that's really it.	Spawning particles is super cheap, and once you spawn them, the rest of
 					// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
 
-					particleSystem.spawnParticle( options );
+					particleSystem.spawnParticle(options);
 
 				}
 
 			}
 
-			particleSystem.update( tick );
+			particleSystem.update(tick);
 
 			render();
 
@@ -276,9 +282,9 @@
 		}
 
 		function render() {
-			var terrain = scene.children[ 0 ]
+			var terrain = scene.children[0]
 			terrain.material.uniforms.displaceAmt.value = 10;
-			renderer.render( scene, camera );
+			renderer.render(scene, camera);
 
 		}
 
