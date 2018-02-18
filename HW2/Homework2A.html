@@ -30,6 +30,9 @@
 	<script src="js/loader/OBJLoader.js"></script>
 	<script src="js/controls/OrbitControls.js"></script>
 	<script src="js/dat.gui.min.js"></script>
+	<script src="js/Refractor.js"></script>
+	<script src="js/water.js"></script>
+	<script src="js/shader/WaterRefractionShader.js"></script>
 
 	<script id="skyboxVS" type="x-shader/x-vertex">
 
@@ -106,8 +109,11 @@
 
 		void main() {
   			vec3 reflection = reflect( vI, vWorldNormal );
-  			vec4 envColor = textureCube( envMap, vec3( -reflection.x, reflection.yz ) );
-  			gl_FragColor = vec4(envColor);
+			vec4 envColor = textureCube( envMap, vec3( -reflection.x, reflection.yz ) );
+			vec3 refraction = refract(vI, vWorldNormal, 1.0/1.52);
+			vec4 refractcolor = textureCube(envMap,refraction);
+			vec4 mixColor = mix(refractcolor, envColor, 0.5);
+  			gl_FragColor = vec4(mixColor);
 		}
   
 	</script>
@@ -118,9 +124,9 @@
 	//Three.js gives us these automatically when a perspective camera is bound to the renderer
 	uniform mat4 modelMatrix;
 	uniform mat4 viewMatrix;
-      	uniform mat4 projectionMatrix;
+    uniform mat4 projectionMatrix;
 
-     	attribute vec3 position;
+    attribute vec3 position;
 	attribute vec2 uv;
 
 	varying vec2 vUV;
@@ -153,10 +159,10 @@
 
 		uniform mat4 modelMatrix;
 		uniform mat4 viewMatrix;
-			  uniform mat4 projectionMatrix;
+		uniform mat4 projectionMatrix;
 		uniform sampler2D tPic;
 	
-			 attribute vec3 position;
+		attribute vec3 position;
 		attribute vec2 uv;
 		attribute vec3 normal;
 	
@@ -238,6 +244,8 @@
 		var skyMesh, box, water;
 		var displaceAmt_value = 5.0;
 
+		var water_type = 0;
+
 		var texture1;
 
 		init();
@@ -289,7 +297,10 @@
 					'negz.jpg'
 				]);
 
-			var uniforms = { "tCube": { type: "t", value: cubeMap } };
+			var uniforms = { 
+				"tCube": { type: "t", value: cubeMap } 
+
+				};
 
 			var material = new THREE.RawShaderMaterial({
 				uniforms: uniforms,
@@ -322,13 +333,25 @@
 				fragmentShader: em_fs
 			});
 
-
+			//water
 			var water_geometry = new THREE.PlaneGeometry( 50, 50, 300, 300 );
+			water_three = new THREE.Water( water_geometry, {
+				textureWidth: 512,
+				textureHeight: 512,
+				waterColor: 0x001e0f,
+				distortionScale: 1,
+			} );
+			water_three.rotateX(-Math.PI/2);
+			water_three.position.y = 2.0;
+			water_three.receiveShadow = true;
+
 			water = new THREE.Mesh(water_geometry, material2);
 			water.rotateX(-Math.PI/2);
 			water.position.y = 2.0;
-			scene.add(water);
 
+			scene.add(water);
+			
+			//a box
 			var gBox = new THREE.BoxGeometry(1, 1, 1);
 			box = new THREE.Mesh(gBox, material2);
 			box.position.x -= 1.0;
@@ -346,6 +369,7 @@
 			}
 			water_g = {
 				height: 2.0,
+				shader: 'GLSL_shader'
 			}
 			var terr_folder = gui.addFolder('Terrain');
 			var terr_displace = terr_folder.add(terrain, 'displaceAmt').min(0).max(20).step(0.01).listen();
@@ -357,7 +381,25 @@
 			var water_folder = gui.addFolder('Water');
 			var water_height = water_folder.add(water_g, 'height').min(0).max(20).step(0.01).listen();
 			water_height.onChange(function(value){
-				water.position.y = value;
+				if(water_type == 0){
+					water.position.y = value;
+				}else{
+					water_three.position.y = value;
+				}
+				
+			});
+			var water_change = gui.add(water_g, 'shader', ['GLSL_shader', 'THREE.Water']).name('Shader');
+			water_change.onChange(function (value) {
+				if(value == 'GLSL_shader'){
+					scene.remove(water_three);
+					scene.add(water);
+					water_type = 0;
+				}
+				if(value == 'THREE.Water'){
+					scene.remove(water);
+					scene.add(water_three);
+					water_type = 1;
+				}
 			});
 			water_folder.open()
 
