@@ -2,7 +2,7 @@
 
 ### A. Outdoor 3D scene
 -A height map<br>
-    Created from a image file.<br>
+    Created from a image file that change the vertex of the plane to create terrain.<br>
 -Cube map<br>
     Used CubeTextureLoader to load the texture. Created vertex shader and fragment shader to build the skybox.<br>
 -Water<br>
