@@ -335,7 +335,8 @@ THREE.GPUParticleContainer = function ( maxParticles, particleSystem ) {
 		// position
 
 		positionStartAttribute.array[ i * 3 + 0 ] = position.x + ( particleSystem.random() * positionRandomness );
-		positionStartAttribute.array[ i * 3 + 1 ] = position.y + ( particleSystem.random() * positionRandomness );
+		//positionStartAttribute.array[ i * 3 + 1 ] = position.y + ( particleSystem.random() * positionRandomness );
+		positionStartAttribute.array[ i * 3 + 1 ] = position.y
 		positionStartAttribute.array[ i * 3 + 2 ] = position.z + ( particleSystem.random() * positionRandomness );
 
 		if ( smoothPosition === true ) {
