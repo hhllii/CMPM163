@@ -19,9 +19,17 @@
 link: https://hhllii.github.io/CMPM163/HW2/Homework2A.html <br>
 
 ### B. Abstract scene using particles and noise
--Particle system
-    Used the GPUParticleSystem to create the particle system that mimic snowing. There is only positionRandomness in GPUParticleSystem to control the range of particle generation. So I change the GPUParticleSystem.js to generate the snow in a plane.
+-Particle system <br>
+    Used the GPUParticleSystem to create the particle system that mimic snowing. There is only positionRandomness in GPUParticleSystem to control the range of particle generation. So I change the GPUParticleSystem.js to generate the snow in a plane. <br>
 ```java script
 //positionStartAttribute.array[ i * 3 + 1 ] = position.y + ( particleSystem.random() * positionRandomness );
 positionStartAttribute.array[ i * 3 + 1 ] = position.y 
 ```
+-Noise function<br>
+    The GPUParticleSystem uses the noise texture to caculate the noise. Input the noise texture to particleNoiseTex.<br>
+-Gui<br>
+    dat.gui can control some parameters of the particle system.<br>
+-Textured point sprites<br>
+    Used a snowflake png file as the texture of point sprites.<br>
+![particle system](https://github.com/hhllii/CMPM163/blob/master/HW2/screenshot/Bpic1.png)<br>
+link: https://hhllii.github.io/CMPM163/HW2/Homework2B.html <br>
