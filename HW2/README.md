@@ -13,4 +13,5 @@
     Used dat.gui to create the gui panel. It can change the displaceAmt value and the height of water.<br>
 -*refraction<br>
     Edited the fragmentshader to apply the refraction to the water. Mixed the value of reflection and refraction and it seems not real...(GLSL_shader)<br>
-    Created another water by THREE.Water which is created by three.js. Switch the two water with the gui.(THREE.Water)<br>
+    Created another water by THREE.Water which is created by three.js. Switch the two water with the gui.(THREE.Water)<br>*
+![](https://github.com/hhllii/CMPM163/tree/master/HW2/screenshot/Apic1.png)
