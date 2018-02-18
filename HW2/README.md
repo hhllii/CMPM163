@@ -28,7 +28,7 @@ positionStartAttribute.array[ i * 3 + 1 ] = position.y
 -Noise function<br>
     The GPUParticleSystem uses the noise texture to caculate the noise. Input the noise texture to particleNoiseTex.<br>
 -Gui<br>
-    dat.gui can control some parameters of the particle system.<br>
+    dat.gui can control some parameters of the particle system.<br>
 -Textured point sprites<br>
     Used a snowflake png file as the texture of point sprites.<br>
 ![particle system](https://github.com/hhllii/CMPM163/blob/master/HW2/screenshot/Bpic1.png)<br>
