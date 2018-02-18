@@ -197,7 +197,7 @@ THREE.GPUParticleSystem = function (options) {
 			'uniform float uTime;',
 			'uniform float uScale;',
 			'uniform sampler2D tNoise;',
-
+			//'attribute vec3 normal',
 			'attribute vec3 positionStart;',
 			'attribute float startTime;',
 			'attribute vec3 velocity;',
@@ -237,7 +237,7 @@ THREE.GPUParticleSystem = function (options) {
 			'	float noiseV = pnoise( newPosition.xyz, vec3(10.0) );',
 
 			//'	newPosition = mix( newPosition, newPosition + vec3( noiseVel * ( turbulence * 5.0 ) ), ( timeElapsed / lifeTime ) );',
-			'	newPosition = mix( newPosition, newPosition + velocity * noiseV * ( turbulence * 5.0 ) , ( timeElapsed / lifeTime ) );',
+			'	newPosition = mix( newPosition, newPosition + normal * noiseV * ( turbulence * 5.0 ) , ( timeElapsed / lifeTime ) );',
 
 			'	if( v.y > 0. && v.y < .05 ) {',
 
