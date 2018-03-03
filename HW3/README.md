@@ -12,6 +12,6 @@
 * Add textures to the SDF objects in the scene<br>
   Pass the texture to shader by Textureloader.<br>
 ![SDFs](https://github.com/hhllii/CMPM163/blob/master/HW3/screenshot/Bpic1.png)<br>
- link: https://hhllii.github.io/CMPM163/HW2/Homework3B.html <br>
+ link: https://hhllii.github.io/CMPM163/HW3/Homework3B.html <br>
 ### C. Begin Planning Your Final Project
-link: https://hhllii.github.io/CMPM163/HW2/Homework3C.pdf <br>
+link: https://hhllii.github.io/CMPM163/HW3/Homework3C.pdf <br>
