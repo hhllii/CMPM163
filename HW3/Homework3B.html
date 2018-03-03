@@ -101,7 +101,18 @@
 	float differenceSDF(float distA, float distB) {
 		return max(distA, -distB);
 	}
-	
+	//Capsule / Line - signed - exact
+	float sdCapsule( vec3 p, vec3 a, vec3 b, float r )
+	{
+		vec3 pa = p - a, ba = b - a;
+		float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+		return length( pa - ba*h ) - r;
+	}
+	float sdTorus( vec3 p, vec2 t )
+	{
+	vec2 q = vec2(length(p.xz)-t.x,p.y);
+	return length(q)-t.y;
+	}
 	//Signed distance function for a cube centered at the origin
 	float boxSDF(vec3 p, vec3 size) {
 		vec3 d = abs(p) - (size / 2.0);
@@ -155,13 +166,14 @@
 		float sphere = sphereSDF(samplePoint, 1.2+cos(1.2 * iTime));
 		
 		float ballOffset = 0.4 + 1.0 + sin(1.2 * iTime);
-		float ballRadius = abs(0.3*sin(1.2 * iTime));
-		float balls = sphereSDF(samplePoint - vec3(ballOffset, 0.0, 0.0), ballRadius);
-		balls = unionSDF(balls, sphereSDF(samplePoint + vec3(ballOffset, 0.0, 0.0), ballRadius));
-		balls = unionSDF(balls, sphereSDF(samplePoint - vec3(0.0, ballOffset, 0.0), ballRadius));
-		balls = unionSDF(balls, sphereSDF(samplePoint + vec3(0.0, ballOffset, 0.0), ballRadius));
-		balls = unionSDF(balls, sphereSDF(samplePoint - vec3(0.0, 0.0, ballOffset), ballRadius));
-		balls = unionSDF(balls, sphereSDF(samplePoint + vec3(0.0, 0.0, ballOffset), ballRadius));
+		//float ballRadius = abs(0.3*sin(1.2 * iTime));
+		vec2 ballRadius =  vec2(abs(0.3*sin(1.2 * iTime)), 0.1);
+		float balls = sdTorus(samplePoint - vec3(ballOffset, 0.0, 0.0), ballRadius);
+		balls = unionSDF(balls, sdTorus(samplePoint + vec3(ballOffset, 0.0, 0.0), ballRadius));
+		balls = unionSDF(balls, sdTorus(samplePoint - vec3(0.0, ballOffset, 0.0), ballRadius));
+		balls = unionSDF(balls, sdTorus(samplePoint + vec3(0.0, ballOffset, 0.0), ballRadius));
+		balls = unionSDF(balls, sdTorus(samplePoint - vec3(0.0, 0.0, ballOffset), ballRadius));
+		balls = unionSDF(balls, sdTorus(samplePoint + vec3(0.0, 0.0, ballOffset), ballRadius));
 		
 		
 		
