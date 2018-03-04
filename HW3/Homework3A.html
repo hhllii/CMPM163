@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>demo - shader</title>
+	<meta charset="utf-8">
+	<style>
+		body {
+			margin: 0px;
+			overflow: hidden;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div id="container"></div>
+
+	<script src="js/three.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+
+	<script id="vertexShader" type="x-shader/x-vertex">
+
+	uniform mat4 modelMatrix;
+	uniform mat4 viewMatrix;
+    uniform mat4 projectionMatrix;
+
+    attribute vec3 position;
+	attribute vec2 uv;
+	attribute vec3 normal;
+
+	varying vec2 vUV;
+    
+	precision mediump float;
+
+
+	void main() {
+		vUV = uv;
+       	gl_Position = projectionMatrix  * viewMatrix * modelMatrix  * vec4( position, 1.0 );
+    }
+
+	</script>
+
+	<script id="fragmentShader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+uniform vec2 u_resolution;
+varying vec2 vUV;
+uniform float iTime;
+uniform sampler2D tex;
+uniform float smooth_max;
+uniform float smooth_min;
+uniform float buffer;
+uniform float move_x;
+uniform float move_y;
+
+
+float boxDist(vec2 p, vec2 size)
+{
+	vec2 d = abs(p) - size;
+  	return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+float circleDist(vec2 p, float radius)
+{
+	return length(p) - radius;
+}
+
+float triangleDist(vec2 p, float width, float height)
+{
+	vec2 n = normalize(vec2(height, width / 2.0));
+	return max( abs(p).x*n.x + p.y*n.y - (height*n.y), -p.y );
+}
+
+float merge(float d1, float d2)
+{
+	return min(d1, d2);
+}
+
+vec2 translate(vec2 p, vec2 t)
+{
+	return p - t;
+}
+
+void main() {
+
+    float x_inc = u_resolution.x / 4.0;
+    float y_pos = u_resolution.y / 2.0;
+
+	// retrieve distance from texture
+	vec4 texcolor = texture2D(tex, vec2(vUV.x - 0.2 + move_x, vUV.y - 0.2 + move_y) * 2.0);
+	float mask = texcolor.a;
+
+	vec4 clr;
+	clr.rgb = vec3(1.0, 0.0, 0.0);
+
+	// perform simple thresholding
+	if(mask < buffer){
+		clr.q = 1.0;
+		clr.rgb = vec3(0.0, 0.0, 0.0);
+		//clr.q = 0.0;
+	}else{
+		//clr.g = 1.0;
+		clr.q = 1.0;
+	}
+
+	// do some anti-aliasing
+	clr.a *= smoothstep(smooth_min, smooth_max, mask);
+	gl_FragColor = clr;
+	// float dist = texcolor.r;
+    // if (dist > 0.0){
+	// 	gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+	// }
+
+}
+	</script>
+
+	<script>
+
+
+		var container;
+
+		var camera, scene, renderer, mesh;
+
+		var vs = document.getElementById('vertexShader').textContent;
+		var fs = document.getElementById('fragmentShader').textContent;
+
+		var mouseX = 0.0;
+		var mouseY = 0.0;
+
+		var smooth_min_value = 0.25;
+		var smooth_max_value = 0.45;
+		var buffer_value = 0.5;
+		var move_x_value = 0.0;
+		var move_y_value = 0.0;
+
+		var objTex;
+
+		init();
+		animate();
+
+		function init() {
+
+			container = document.getElementById('container');
+
+			var width = window.innerWidth;
+			var height = window.innerHeight;
+
+
+			camera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 0.1, 1000);
+			camera.position.z = 10;
+			//var controls = new THREE.OrbitControls(camera);
+
+			scene = new THREE.Scene();
+
+
+			// geometry
+
+			var geometry = new THREE.PlaneGeometry(width, height, 1, 1);
+
+			// material
+			var font_arial = new THREE.TextureLoader().load('res/sdff_arial.png');
+			var font_roman = new THREE.TextureLoader().load('res/sdff_roman.png');
+			var font_stencil = new THREE.TextureLoader().load('res/sdff_stencil.png');
+			objTex = font_arial;
+
+			var uniforms = {
+				u_resolution: { type: "v2", value: new THREE.Vector2(width, height) },
+				iTime: { typr: "f", value: 0.0 },
+				tex: { type: "t", value: objTex },
+				smooth_min: {type: "f", value: smooth_min_value},
+				smooth_max: {type: "f", value: smooth_max_value},
+				buffer: {type: "f", value: buffer_value},
+				move_x: {type: "f", value: move_y_value},
+				move_y: {type: "f", value: move_y_value},
+			};
+
+
+			var material = new THREE.RawShaderMaterial({
+
+				uniforms: uniforms,
+				vertexShader: vs,
+				fragmentShader: fs,
+				// blending:       THREE.AdditiveBlending,
+				// depthTest:      false,
+				transparent: true
+			});
+
+
+			mesh = new THREE.Mesh(geometry, material);
+			mesh.position.x = 10.0;
+			scene.add(mesh);
+
+			//GUI
+			gui = new dat.GUI();
+			font_gui = {
+				font_type: 'arial',
+				smooth_min: 0.25,
+				smooth_max: 0.45,
+				buffer: 0.5,
+				x: 0.0,
+				y: 0.0,
+			}
+			var font_folder = gui.addFolder('Font');
+
+			var font_change = gui.add(font_gui, 'font_type', ['arial', 'roman', 'stencil']).name('font_type');
+			font_change.onChange(function (value) {
+				if (value == 'arial') {
+					objTex = font_arial;
+				}
+				if (value == 'roman') {
+					objTex = font_roman;
+				}
+				if (value == 'stencil') {
+					objTex = font_stencil;
+				}
+			});
+
+			var font_smooth_min = font_folder.add(font_gui, 'smooth_min').min(0).max(1).step(0.01).listen();
+			font_smooth_min.onChange(function(value){
+				smooth_min_value = value;
+			});
+			var font_smooth_max = font_folder.add(font_gui, 'smooth_max').min(0).max(1).step(0.01).listen();
+			font_smooth_max.onChange(function(value){
+				smooth_max_value = value;
+			});
+			var font_buffer = font_folder.add(font_gui, 'buffer').min(0).max(1).step(0.01).listen();
+			font_buffer.onChange(function(value){
+				buffer_value = value;
+			});
+			var font_x = font_folder.add(font_gui, 'x').min(-1).max(1).step(0.01).listen();
+			font_x.onChange(function(value){
+				move_x_value = value;
+			});
+			var font_y = font_folder.add(font_gui, 'y').min(-1).max(1).step(0.01).listen();
+			font_y.onChange(function(value){
+				move_y_value = value;
+			});
+			font_folder.open();
+			
+			gui.open()//end gui
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setClearColor(0x999999);
+			container.appendChild(renderer.domElement);
+
+
+			window.addEventListener('resize', onWindowResize, true);
+
+		}
+
+		function onWindowResize(event) {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			mesh.material.uniforms.u_resolution.value = new THREE.Vector2(window.innerWidth, window.innerHeight);
+		}
+
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+
+			var font_p = scene.children[ 0 ];
+			font_p.material.uniforms.smooth_min.value = smooth_min_value;
+			font_p.material.uniforms.smooth_max.value = smooth_max_value;
+			font_p.material.uniforms.tex.value = objTex;
+			font_p.material.uniforms.buffer.value = buffer_value;
+			font_p.material.uniforms.move_x.value = move_x_value;
+			font_p.material.uniforms.move_y.value = move_y_value;
+			renderer.render(scene, camera);
+		}
+
+
+
+
+	</script>
+
+</body>
+
+</html>
