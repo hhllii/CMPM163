@@ -55,6 +55,7 @@ uniform float smooth_min;
 uniform float buffer;
 uniform float move_x;
 uniform float move_y;
+uniform vec3 font_color;
 
 
 float boxDist(vec2 p, vec2 size)
@@ -88,13 +89,14 @@ void main() {
 
     float x_inc = u_resolution.x / 4.0;
     float y_pos = u_resolution.y / 2.0;
+	float f_y = 1.0 * 0.3 * sin(iTime) - 0.1;
 
 	// retrieve distance from texture
-	vec4 texcolor = texture2D(tex, vec2(vUV.x - 0.2 + move_x, vUV.y - 0.2 + move_y) * 2.0);
+	vec4 texcolor = texture2D(tex, vec2(vUV.x - 0.2 + move_x, vUV.y - 0.2 + move_y + f_y) * 2.0);
 	float mask = texcolor.a;
 
 	vec4 clr;
-	clr.rgb = vec3(1.0, 0.0, 0.0);
+	clr.rgb = font_color;
 
 	// perform simple thresholding
 	if(mask < buffer){
@@ -135,6 +137,7 @@ void main() {
 		var buffer_value = 0.5;
 		var move_x_value = 0.0;
 		var move_y_value = 0.0;
+		var font_color_value = new THREE.Vector3(1.0, 0.0, 0.0);
 
 		var objTex;
 
@@ -175,6 +178,7 @@ void main() {
 				buffer: {type: "f", value: buffer_value},
 				move_x: {type: "f", value: move_y_value},
 				move_y: {type: "f", value: move_y_value},
+				font_color: {type: "v3", value: font_color_value},
 			};
 
 
@@ -202,6 +206,7 @@ void main() {
 				buffer: 0.5,
 				x: 0.0,
 				y: 0.0,
+				color: 'red',
 			}
 			var font_folder = gui.addFolder('Font');
 
@@ -238,6 +243,16 @@ void main() {
 			font_y.onChange(function(value){
 				move_y_value = value;
 			});
+			var font_color = gui.add(font_gui, 'color', ['red', 'green']).name('font_color');
+			font_color.onChange(function (value) {
+				if (value == 'red') {
+					font_color_value = new THREE.Vector3(1.0, 0.0, 0.0);
+				}
+				if (value == 'green') {
+					font_color_value = new THREE.Vector3(0.0, 1.0, 0.0);
+				}
+			});
+
 			font_folder.open();
 			
 			gui.open()//end gui
@@ -271,13 +286,17 @@ void main() {
 
 		function render() {
 
+			var time = performance.now();
+			mesh.material.uniforms.iTime.value = time* 0.001;
 			var font_p = scene.children[ 0 ];
+			
 			font_p.material.uniforms.smooth_min.value = smooth_min_value;
 			font_p.material.uniforms.smooth_max.value = smooth_max_value;
 			font_p.material.uniforms.tex.value = objTex;
 			font_p.material.uniforms.buffer.value = buffer_value;
 			font_p.material.uniforms.move_x.value = move_x_value;
 			font_p.material.uniforms.move_y.value = move_y_value;
+			font_p.material.uniforms.font_color.value = font_color_value;
 			renderer.render(scene, camera);
 		}
 
