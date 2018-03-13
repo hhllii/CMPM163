@@ -15,7 +15,8 @@
 
 <div id="container"></div>
 
-    <script src="js/three.js"></script>
+	<script src="js/three.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
     <script id="vertexShader" type="x-shader/x-vertex">
 
 	//Three.js gives us these automatically when a perspective camera is bound to the renderer
@@ -148,6 +149,7 @@
 
 		camera = new THREE.PerspectiveCamera( 60.0, window.innerWidth / window.innerHeight, 0.1, 50 );
 		camera.position.z = 2;
+		var controls = new THREE.OrbitControls(camera);
 
 		scene = new THREE.Scene();
 
