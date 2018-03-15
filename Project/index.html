@@ -88,6 +88,7 @@
 		var stats;
 
 		var texture1 = new THREE.TextureLoader().load('res/ag.png');
+		var texture2 = new THREE.TextureLoader().load('res/ag2.png');
 
 		var mouseX = 0.0;
 		var mouseY = 0.0;
@@ -101,7 +102,7 @@
 			container = document.getElementById('container');
 
 			camera = new THREE.PerspectiveCamera(60.0, window.innerWidth / window.innerHeight, 0.1, 50);
-			camera.position.z = 5;
+			camera.position.z = 8;
 			
 
 			scene = new THREE.Scene();
@@ -157,9 +158,24 @@
 
 
 			mesh = new THREE.Mesh(geometry, material);
-			mesh.translateX(0.0);
 			mesh.material.side = THREE.DoubleSide; //to render both sides of triangle
 			scene.add(mesh);
+
+			var geometry2 = new THREE.PlaneGeometry(2,2);
+			var material2 = new THREE.MeshPhongMaterial({
+				map: texture2
+			});
+			material2.transparent = true;
+			mesh2 = new THREE.Mesh(geometry2, material2);
+			mesh2.position.z = -2;
+			mesh2.material.side = THREE.DoubleSide; //to render both sides of triangle
+			scene.add(mesh2);
+
+			mesh3 = new THREE.Mesh(geometry2, material2);
+			mesh3.position.y = -3;
+			mesh3.material.side = THREE.DoubleSide; //to render both sides of triangle
+			scene.add(mesh3);
+			
 
 			back_geometry = new THREE.PlaneGeometry(3,4);
 			var back_material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
@@ -177,6 +193,11 @@
 			var back_x = back_folder.add(back_gui, 'x').min(-4).max(4).step(0.01).listen();
 			back_x.onChange(function(value){
 				white_back.position.x = value;
+			});
+
+			var back_y = back_folder.add(back_gui, 'y').min(-4).max(4).step(0.01).listen();
+			back_y.onChange(function(value){
+				white_back.position.y = value;
 			});
 
 			back_folder.open();
