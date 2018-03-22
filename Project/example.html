@@ -27,7 +27,7 @@
 	uniform mat4 projectionMatrix;
 	
 	//Since we are using BufferGeometry, we have defined the attributes that we need manually
-    attribute vec3 position;
+     	attribute vec3 position;
 	attribute vec2 texCoords;
 
 	//link variables between the vertex shader and the fragment shader
@@ -52,7 +52,6 @@
 
 	//special data type used to access texture stored on GPU
 	uniform sampler2D t1;
-	uniform sampler2D t2;
 	
 	//need to know the resolution of texture so that we can grab neighbors of current pixel
 	uniform float rx;
@@ -65,26 +64,10 @@
 
       	void main() {
 
-		vec4 color1 = texture2D(t1, UV);
+		
+		vec4 texPix = texture2D(t1, UV);
 
-		//turn to gray_scale
-		float grey_scale1 = dot(color1.rgb, vec3(0.222, 0.707, 0.071));
-
-		color1.r = grey_scale1;
-		color1.g = grey_scale1;
-		color1.b = grey_scale1;
-
-		vec4 color2 = texture2D(t2, UV);
-		//vec4 color2 = vec4(1.0, 1.0, 1.0, 1.0);
-		float grey_scale2 = dot(color2.rgb, vec3(0.222, 0.707, 0.071)) * 0.2;
-		color2.r = grey_scale2;
-		color2.g = grey_scale2;
-		color2.b = grey_scale2;
-
-		float a = 1.0 - color1.r + color2.r;
-    	float r = color2.r / a;
-
-		gl_FragColor = vec4(r, r, r, a); 
+		gl_FragColor = texPix; 
 
 	}
 
@@ -104,8 +87,8 @@
 		var material;
 		var stats;
 
-		var texture1 = new THREE.TextureLoader().load('res/test.jpg');
-		var texture2 = new THREE.TextureLoader().load('res/toho.png');
+		var texture1 = new THREE.TextureLoader().load('res/ag.png');
+		var texture2 = new THREE.TextureLoader().load('res/ag2.png');
 
 		var mouseX = 0.0;
 		var mouseY = 0.0;
@@ -160,7 +143,6 @@
 			// materials (ie, linking to the shader program)
 			var uniforms = {
 				t1: { type: "t", value: texture1 },
-				t2: { type: "t", value: texture2 },
 				rx: { type: "f", value: 1024 / 2 },
 				ry: { type: "f", value: 1024 / 2 },
 				mixVal: { type: "f", value: 0.5 },
@@ -178,7 +160,22 @@
 			mesh = new THREE.Mesh(geometry, material);
 			mesh.material.side = THREE.DoubleSide; //to render both sides of triangle
 			scene.add(mesh);
-		
+
+			var geometry2 = new THREE.PlaneGeometry(2,2);
+			var material2 = new THREE.MeshPhongMaterial({
+				map: texture2
+			});
+			material2.transparent = true;
+			mesh2 = new THREE.Mesh(geometry2, material2);
+			mesh2.position.z = -2;
+			mesh2.material.side = THREE.DoubleSide; //to render both sides of triangle
+			scene.add(mesh2);
+
+			mesh3 = new THREE.Mesh(geometry2, material2);
+			mesh3.position.y = -3;
+			mesh3.material.side = THREE.DoubleSide; //to render both sides of triangle
+			scene.add(mesh3);
+			
 
 			back_geometry = new THREE.PlaneGeometry(3,4);
 			var back_material = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.DoubleSide} );
